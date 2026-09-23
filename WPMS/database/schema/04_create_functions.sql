@@ -2,6 +2,11 @@ USE work_progress_management_system;
 
 DELIMITER //
 
+
+-- ============================================================
+-- IS TASK OVERDUE
+-- ============================================================
+
 CREATE FUNCTION IsTaskOverdue(
     p_due_date DATE,
     p_status VARCHAR(30)
@@ -17,6 +22,11 @@ BEGIN
     );
 
 END //
+
+
+-- ============================================================
+-- GET TASK LOGGED HOURS
+-- ============================================================
 
 CREATE FUNCTION GetTaskLoggedHours(
     p_task_id BIGINT UNSIGNED

@@ -1,5 +1,10 @@
 USE work_progress_management_system;
 
+
+-- ============================================================
+-- ACTIVE TASK OVERVIEW
+-- ============================================================
+
 CREATE OR REPLACE VIEW Active_Task_Overview AS
 SELECT
     t.task_id,
@@ -13,6 +18,11 @@ SELECT
     t.estimated_hours
 FROM Task t
 WHERE t.status <> 'done';
+
+
+-- ============================================================
+-- PROJECT TASK SUMMARY
+-- ============================================================
 
 CREATE OR REPLACE VIEW Project_Task_Summary AS
 SELECT
@@ -37,23 +47,40 @@ SELECT
 FROM Task
 GROUP BY project_id;
 
+
+-- ============================================================
+-- PROJECT TIME SUMMARY
+-- ============================================================
+
 CREATE OR REPLACE VIEW Project_Time_Summary AS
+
 SELECT
-    t.project_id,
+    p.project_id,
 
-    COALESCE(
-        SUM(t.estimated_hours),
-        0
-    ) AS estimated_hours,
+    COALESCE(e.estimated_hours, 0) AS estimated_hours,
 
-    COALESCE(
-        SUM(tl.duration_minutes) / 60,
-        0
-    ) AS logged_hours
+    COALESCE(l.logged_hours, 0) AS logged_hours
 
-FROM Task t
+FROM Project p
 
-LEFT JOIN Time_Log tl
-    ON t.task_id = tl.task_id
+LEFT JOIN
+(
+    SELECT
+        project_id,
+        SUM(estimated_hours) AS estimated_hours
+    FROM Task
+    GROUP BY project_id
+) e
+    ON p.project_id = e.project_id
 
-GROUP BY t.project_id;
+LEFT JOIN
+(
+    SELECT
+        t.project_id,
+        SUM(tl.duration) / 60 AS logged_hours
+    FROM Task t
+    JOIN Time_Log tl
+        ON t.task_id = tl.task_id
+    GROUP BY t.project_id
+) l
+    ON p.project_id = l.project_id;
