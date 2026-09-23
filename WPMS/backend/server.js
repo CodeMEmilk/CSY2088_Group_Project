@@ -1,18 +1,9 @@
 import http from "node:http";
+import app from "./src/app.js";
 
 const PORT = 3000;
 
-const server = http.createServer((request, response) => {
-    response.writeHead(200, {
-        "Content-Type": "application/json"
-    });
-
-    response.end(
-        JSON.stringify({
-            message: "Project Management System backend is running."
-        })
-    );
-});
+const server = http.createServer(app);
 
 server.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}`);
