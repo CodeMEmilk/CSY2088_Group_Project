@@ -1,8 +1,8 @@
-
+-- =========================================================
 -- 1. USER
--- ============================================================
+-- =========================================================
 
-CREATE TABLE User (
+CREATE TABLE `User` (
     user_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     name VARCHAR(150) NOT NULL,
@@ -20,23 +20,26 @@ CREATE TABLE User (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP
-);
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    INDEX idx_user_status (account_status)
+) ENGINE=InnoDB;
 
 
+-- =========================================================
 -- 2. PROJECT
--- ============================================================
+-- =========================================================
 
-CREATE TABLE Project (
+CREATE TABLE `Project` (
     project_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
-    name_title VARCHAR(200) NOT NULL,
+    name_title VARCHAR(255) NOT NULL,
 
     description TEXT,
 
-    start_date DATE NOT NULL,
+    start_date DATE,
 
-    deadline DATE NOT NULL,
+    deadline DATE,
 
     created_by BIGINT UNSIGNED NOT NULL,
 
@@ -45,23 +48,31 @@ CREATE TABLE Project (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
-    CONSTRAINT chk_project_dates
-        CHECK (deadline >= start_date),
-
-    CONSTRAINT fk_project_creator
+    CONSTRAINT fk_project_created_by
         FOREIGN KEY (created_by)
-        REFERENCES User(user_id)
-        ON DELETE RESTRICT
+        REFERENCES `User` (user_id)
         ON UPDATE CASCADE
-);
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_project_dates
+        CHECK (
+            deadline IS NULL
+            OR start_date IS NULL
+            OR deadline >= start_date
+        ),
+
+    INDEX idx_project_created_by (created_by),
+
+    INDEX idx_project_deadline (deadline)
+) ENGINE=InnoDB;
 
 
-
+-- =========================================================
 -- 3. PROJECT MEMBER
---    Project-scoped RBAC
--- ============================================================
+--    Project-scoped role/permission relationship
+-- =========================================================
 
-CREATE TABLE Project_Member (
+CREATE TABLE `Project_Member` (
     project_member_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     project_id BIGINT UNSIGNED NOT NULL,
@@ -85,27 +96,36 @@ CREATE TABLE Project_Member (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_project_member_project
+        FOREIGN KEY (project_id)
+        REFERENCES `Project` (project_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_project_member_user
+        FOREIGN KEY (user_id)
+        REFERENCES `User` (user_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
     CONSTRAINT uq_project_member
         UNIQUE (project_id, user_id),
 
-    CONSTRAINT fk_member_project
-        FOREIGN KEY (project_id)
-        REFERENCES Project(project_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+    INDEX idx_project_member_project (project_id),
 
-    CONSTRAINT fk_member_user
-        FOREIGN KEY (user_id)
-        REFERENCES User(user_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-);
+    INDEX idx_project_member_user (user_id),
+
+    INDEX idx_project_member_role (role),
+
+    INDEX idx_project_member_status (status)
+) ENGINE=InnoDB;
 
 
+-- =========================================================
 -- 4. TASK
--- ============================================================
+-- =========================================================
 
-CREATE TABLE Task (
+CREATE TABLE `Task` (
     task_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     project_id BIGINT UNSIGNED NOT NULL,
@@ -130,13 +150,11 @@ CREATE TABLE Task (
         'urgent'
     ) NOT NULL DEFAULT 'medium',
 
-    start_date DATE NULL,
+    start_date DATE,
 
-    due_date DATE NULL,
+    due_date DATE,
 
-    estimated_hours DECIMAL(8,2) NULL,
-
-    sla_target_hours DECIMAL(8,2) NULL,
+    estimated_hours DECIMAL(10,2) NULL,
 
     completed_at DATETIME NULL,
 
@@ -145,6 +163,18 @@ CREATE TABLE Task (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ON UPDATE CURRENT_TIMESTAMP,
 
+    CONSTRAINT fk_task_project
+        FOREIGN KEY (project_id)
+        REFERENCES `Project` (project_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_task_assigned_to
+        FOREIGN KEY (assigned_to)
+        REFERENCES `User` (user_id)
+        ON UPDATE CASCADE
+        ON DELETE SET NULL,
+
     CONSTRAINT chk_task_dates
         CHECK (
             due_date IS NULL
@@ -152,67 +182,35 @@ CREATE TABLE Task (
             OR due_date >= start_date
         ),
 
-    CONSTRAINT chk_estimated_hours
+    CONSTRAINT chk_task_estimated_hours
         CHECK (
             estimated_hours IS NULL
             OR estimated_hours >= 0
         ),
 
-    CONSTRAINT chk_sla_target
+    CONSTRAINT chk_task_completed_at
         CHECK (
-            sla_target_hours IS NULL
-            OR sla_target_hours >= 0
+            status = 'done'
+            OR completed_at IS NULL
         ),
 
-    CONSTRAINT fk_task_project
-        FOREIGN KEY (project_id)
-        REFERENCES Project(project_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+    INDEX idx_task_project (project_id),
 
-    CONSTRAINT fk_task_assignee
-        FOREIGN KEY (assigned_to)
-        REFERENCES User(user_id)
-        ON DELETE SET NULL
-        ON UPDATE CASCADE
-);
+    INDEX idx_task_assigned_to (assigned_to),
+
+    INDEX idx_task_status (status),
+
+    INDEX idx_task_priority (priority),
+
+    INDEX idx_task_due_date (due_date)
+) ENGINE=InnoDB;
 
 
--- 5. TASK CHECKLIST ITEM
---    Definition of Done
--- ============================================================
+-- =========================================================
+-- 5. COMMENT
+-- =========================================================
 
-CREATE TABLE Task_CheckList_Item (
-    criterion_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
-    task_id BIGINT UNSIGNED NOT NULL,
-
-    description VARCHAR(500) NOT NULL,
-
-    is_completed BOOLEAN NOT NULL DEFAULT FALSE,
-
-    completed_at DATETIME NULL,
-
-    position INT UNSIGNED NOT NULL DEFAULT 1,
-
-    CONSTRAINT chk_checklist_completion
-        CHECK (
-            (is_completed = FALSE AND completed_at IS NULL)
-            OR
-            (is_completed = TRUE AND completed_at IS NOT NULL)
-        ),
-
-    CONSTRAINT fk_checklist_task
-        FOREIGN KEY (task_id)
-        REFERENCES Task(task_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-);
-
--- 6. COMMENT
--- ============================================================
-
-CREATE TABLE Comment (
+CREATE TABLE `Comment` (
     comment_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     task_id BIGINT UNSIGNED NOT NULL,
@@ -228,22 +226,104 @@ CREATE TABLE Comment (
 
     CONSTRAINT fk_comment_task
         FOREIGN KEY (task_id)
-        REFERENCES Task(task_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+        REFERENCES `Task` (task_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
 
     CONSTRAINT fk_comment_user
         FOREIGN KEY (user_id)
-        REFERENCES User(user_id)
-        ON DELETE RESTRICT
+        REFERENCES `User` (user_id)
         ON UPDATE CASCADE
-);
+        ON DELETE RESTRICT,
+
+    INDEX idx_comment_task (task_id),
+
+    INDEX idx_comment_user (user_id),
+
+    INDEX idx_comment_created_at (created_at)
+) ENGINE=InnoDB;
 
 
--- 7. ATTACHMENT
--- ============================================================
+-- =========================================================
+-- 6. TASK CHECKLIST ITEM
+-- =========================================================
 
-CREATE TABLE Attachment (
+CREATE TABLE `Task_CheckList_Item` (
+    criterion_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    task_id BIGINT UNSIGNED NOT NULL,
+
+    description VARCHAR(500) NOT NULL,
+
+    is_completed BOOLEAN NOT NULL DEFAULT FALSE,
+
+    completed_at DATETIME NULL,
+
+    position INT UNSIGNED NOT NULL DEFAULT 0,
+
+    CONSTRAINT fk_checklist_task
+        FOREIGN KEY (task_id)
+        REFERENCES `Task` (task_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_checklist_completion
+        CHECK (
+            (is_completed = FALSE AND completed_at IS NULL)
+            OR
+            (is_completed = TRUE AND completed_at IS NOT NULL)
+        ),
+
+    INDEX idx_checklist_task (task_id),
+
+    INDEX idx_checklist_position (task_id, position)
+) ENGINE=InnoDB;
+
+
+-- =========================================================
+-- 7. TASK DEPENDENCY
+-- =========================================================
+
+CREATE TABLE `TASK_DEPENDENCY` (
+    dependency_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+
+    blocking_task_id BIGINT UNSIGNED NOT NULL,
+
+    blocked_task_id BIGINT UNSIGNED NOT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_dependency_blocking_task
+        FOREIGN KEY (blocking_task_id)
+        REFERENCES `Task` (task_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_dependency_blocked_task
+        FOREIGN KEY (blocked_task_id)
+        REFERENCES `Task` (task_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT uq_task_dependency
+        UNIQUE (blocking_task_id, blocked_task_id),
+
+    CONSTRAINT chk_task_dependency_self
+        CHECK (
+            blocking_task_id <> blocked_task_id
+        ),
+
+    INDEX idx_dependency_blocking (blocking_task_id),
+
+    INDEX idx_dependency_blocked (blocked_task_id)
+) ENGINE=InnoDB;
+
+
+-- =========================================================
+-- 8. ATTACHMENT
+-- =========================================================
+
+CREATE TABLE `Attachment` (
     attachment_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     task_id BIGINT UNSIGNED NOT NULL,
@@ -252,7 +332,7 @@ CREATE TABLE Attachment (
 
     file_name VARCHAR(255) NOT NULL,
 
-    file_path VARCHAR(500) NOT NULL,
+    file_path VARCHAR(1000) NOT NULL,
 
     file_type VARCHAR(100),
 
@@ -262,86 +342,27 @@ CREATE TABLE Attachment (
 
     CONSTRAINT fk_attachment_task
         FOREIGN KEY (task_id)
-        REFERENCES Task(task_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+        REFERENCES `Task` (task_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
 
-    CONSTRAINT fk_attachment_user
+    CONSTRAINT fk_attachment_uploaded_by
         FOREIGN KEY (uploaded_by)
-        REFERENCES User(user_id)
-        ON DELETE RESTRICT
+        REFERENCES `User` (user_id)
         ON UPDATE CASCADE
-);
+        ON DELETE RESTRICT,
 
--- 8. TASK DEPENDENCY
--- ============================================================
+    INDEX idx_attachment_task (task_id),
 
-CREATE TABLE Task_Dependency (
-    dependency_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    INDEX idx_attachment_uploaded_by (uploaded_by)
+) ENGINE=InnoDB;
 
-    blocking_task_id BIGINT UNSIGNED NOT NULL,
 
-    blocked_task_id BIGINT UNSIGNED NOT NULL,
+-- =========================================================
+-- 9. TIME LOG
+-- =========================================================
 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT uq_task_dependency
-        UNIQUE (blocking_task_id, blocked_task_id),
-
-    CONSTRAINT chk_no_self_dependency
-        CHECK (blocking_task_id <> blocked_task_id),
-
-    CONSTRAINT fk_dependency_blocking_task
-        FOREIGN KEY (blocking_task_id)
-        REFERENCES Task(task_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
-
-    CONSTRAINT fk_dependency_blocked_task
-        FOREIGN KEY (blocked_task_id)
-        REFERENCES Task(task_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-);
-
--- 9. PROJECT MILESTONE
--- ============================================================
-
-CREATE TABLE Project_Milestone (
-    milestone_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-
-    project_id BIGINT UNSIGNED NOT NULL,
-
-    name VARCHAR(200) NOT NULL,
-
-    description TEXT,
-
-    target_date DATE NOT NULL,
-
-    status ENUM(
-        'pending',
-        'completed',
-        'cancelled'
-    ) NOT NULL DEFAULT 'pending',
-
-    completed_at DATETIME NULL,
-
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-        ON UPDATE CURRENT_TIMESTAMP,
-
-    CONSTRAINT fk_milestone_project
-        FOREIGN KEY (project_id)
-        REFERENCES Project(project_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
-);
-
--- 10. TIME LOG
--- ============================================================
-
-CREATE TABLE Time_Log (
+CREATE TABLE `TIME_LOG` (
     time_log_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
     task_id BIGINT UNSIGNED NOT NULL,
@@ -352,9 +373,27 @@ CREATE TABLE Time_Log (
 
     ended_at DATETIME NULL,
 
-    duration_minutes INT UNSIGNED NULL,
+    duration DECIMAL(10,2) NULL,
 
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_time_log_task
+        FOREIGN KEY (task_id)
+        REFERENCES `Task` (task_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_time_log_user
+        FOREIGN KEY (user_id)
+        REFERENCES `User` (user_id)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+
+    CONSTRAINT chk_time_log_duration
+        CHECK (
+            duration IS NULL
+            OR duration >= 0
+        ),
 
     CONSTRAINT chk_time_log_dates
         CHECK (
@@ -362,74 +401,9 @@ CREATE TABLE Time_Log (
             OR ended_at >= started_at
         ),
 
-    CONSTRAINT chk_duration
-        CHECK (
-            duration_minutes IS NULL
-            OR duration_minutes >= 0
-        ),
+    INDEX idx_time_log_task (task_id),
 
-    CONSTRAINT fk_time_log_task
-        FOREIGN KEY (task_id)
-        REFERENCES Task(task_id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE,
+    INDEX idx_time_log_user (user_id),
 
-    CONSTRAINT fk_time_log_user
-        FOREIGN KEY (user_id)
-        REFERENCES User(user_id)
-        ON DELETE RESTRICT
-        ON UPDATE CASCADE
-);
-
-
--- ============================================================
--- INDEXES
--- ============================================================
-
-CREATE INDEX idx_project_created_by
-    ON Project(created_by);
-
-CREATE INDEX idx_member_user
-    ON Project_Member(user_id);
-
-CREATE INDEX idx_member_project_role
-    ON Project_Member(project_id, role);
-
-CREATE INDEX idx_task_project
-    ON Task(project_id);
-
-CREATE INDEX idx_task_assigned_to
-    ON Task(assigned_to);
-
-CREATE INDEX idx_task_status
-    ON Task(status);
-
-CREATE INDEX idx_task_due_date
-    ON Task(due_date);
-
-CREATE INDEX idx_checklist_task
-    ON Task_CheckList_Item(task_id);
-
-CREATE INDEX idx_comment_task
-    ON Comment(task_id);
-
-CREATE INDEX idx_attachment_task
-    ON Attachment(task_id);
-
-CREATE INDEX idx_dependency_blocking
-    ON Task_Dependency(blocking_task_id);
-
-CREATE INDEX idx_dependency_blocked
-    ON Task_Dependency(blocked_task_id);
-
-CREATE INDEX idx_milestone_project
-    ON Project_Milestone(project_id);
-
-CREATE INDEX idx_time_log_task
-    ON Time_Log(task_id);
-
-CREATE INDEX idx_time_log_user
-    ON Time_Log(user_id);
-
-CREATE INDEX idx_time_log_started
-    ON Time_Log(started_at);
+    INDEX idx_time_log_started_at (started_at)
+) ENGINE=InnoDB;
