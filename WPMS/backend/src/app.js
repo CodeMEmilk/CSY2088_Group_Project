@@ -9,8 +9,10 @@ import {
 
 import AppError from "./core/errors/AppError.js";
 
-import * as mockProjectRepository
-    from "./repositories/mockProjectRepository.js";
+import pool from "./config/database.js";
+
+import createMySQLProjectRepository
+    from "./repositories/mysqlProjectRepository.js";
 
 import createProjectService
     from "./services/projectService.js";
@@ -22,13 +24,14 @@ import registerProjectRoutes
     from "./routes/projectRoutes.js";
 
 // Assemble the project module.
-const projectService = createProjectService(
-    mockProjectRepository
-);
+const projectRepository =
+    createMySQLProjectRepository(pool);
 
-const projectController = createProjectController(
-    projectService
-);
+const projectService =
+    createProjectService(projectRepository);
+
+const projectController =
+    createProjectController(projectService);
 
 // Create and configure the router.
 const router = createRouter();
