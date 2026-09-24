@@ -90,7 +90,7 @@ function createRouter() {
         return null;
     }
 
-    function handle(request, response) {
+async function handle(request, response) {
         const path = getPath(request);
         const method = getMethod(request);
 
@@ -106,7 +106,7 @@ function createRouter() {
             query: getQuery(request)
         };
 
-        route.handler(request, response, context);
+        await route.handler(request, response, context);
     }
 
     return {

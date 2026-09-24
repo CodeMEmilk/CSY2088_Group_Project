@@ -1,38 +1,79 @@
+
 import createRouter from "./core/router/router.js";
 
 import {
-    sendSuccess
+    sendSuccess,
+    sendJson,
+    sendServerError
 } from "./core/http/response.js";
 
-function home(request, response) {
+import AppError from "./core/errors/AppError.js";
+
+import * as mockProjectRepository
+    from "./repositories/mockProjectRepository.js";
+
+import createProjectService
+    from "./services/projectService.js";
+
+import createProjectController
+    from "./controllers/projectController.js";
+
+import registerProjectRoutes
+    from "./routes/projectRoutes.js";
+
+// Assemble the project module.
+const projectService = createProjectService(
+    mockProjectRepository
+);
+
+const projectController = createProjectController(
+    projectService
+);
+
+// Create and configure the router.
+const router = createRouter();
+
+router.get("/", (request, response) => {
     sendSuccess(response, {
         message: "Welcome to the Project Management System API."
     });
-}
+});
 
-function health(request, response) {
+router.get("/api/health", (request, response) => {
     sendSuccess(response, {
         status: "ok",
         service: "project-management-backend"
     });
-}
+});
 
-function getProject(request, response, context) {
-    sendSuccess(response, {
-        message: "Project route reached.",
-        projectId: context.params.projectId,
-        query: context.query
-    });
-}
+registerProjectRoutes(router, projectController);
 
-const router = createRouter();
+// Central application error boundary.
+async function app(request, response) {
+    try {
+        await router.handle(request, response);
+    } catch (error) {
+        console.error(error);
 
-router.get("/", home);
-router.get("/api/health", health);
-router.get("/api/projects/:projectId", getProject);
+        if (response.headersSent) {
+            if (!response.writableEnded) {
+                response.destroy();
+            }
+            return;
+        }
 
-function app(request, response) {
-    router.handle(request, response);
+        if (error instanceof AppError) {
+            sendJson(response, error.statusCode, {
+                error: error.message,
+                ...(error.details !== null
+                    ? { details: error.details }
+                    : {})
+            });
+            return;
+        }
+
+        sendServerError(response);
+    }
 }
 
 export default app;
