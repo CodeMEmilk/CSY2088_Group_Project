@@ -24,6 +24,7 @@ test("Health endpoint returns 200", async () => {
 test("Retrieves mock project 1", async () => {
     const result = await getJson("/api/projects/1");
 
+    assert.equal(result.status, 200);
     assert.equal(result.body.project.project_id, 1);
     assert.equal(
         result.body.project.name_title,
