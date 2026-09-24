@@ -1,3 +1,13 @@
+import {
+    getPath,
+    getQuery,
+    getMethod
+} from "../http/request.js";
+
+import {
+    sendNotFound
+} from "../http/response.js";
+
 function createRouter() {
     const routes = [];
 
@@ -81,33 +91,19 @@ function createRouter() {
     }
 
     function handle(request, response) {
-        const url = new URL(
-            request.url,
-            `http://${request.headers.host}`
-        );
+        const path = getPath(request);
+        const method = getMethod(request);
 
-        const route = resolve(
-            request.method,
-            url.pathname
-        );
+        const route = resolve(method, path);
 
         if (!route) {
-            response.writeHead(404, {
-                "Content-Type": "application/json"
-            });
-
-            response.end(
-                JSON.stringify({
-                    error: "Route not found"
-                })
-            );
-
+            sendNotFound(response, "Route not found");
             return;
         }
 
         const context = {
             params: route.params,
-            query: Object.fromEntries(url.searchParams.entries())
+            query: getQuery(request)
         };
 
         route.handler(request, response, context);

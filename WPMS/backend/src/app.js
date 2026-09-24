@@ -1,42 +1,28 @@
 import createRouter from "./core/router/router.js";
 
-function home(request, response) {
-    response.writeHead(200, {
-        "Content-Type": "application/json"
-    });
+import {
+    sendSuccess
+} from "./core/http/response.js";
 
-    response.end(
-        JSON.stringify({
-            message: "Welcome to the Project Management System API."
-        })
-    );
+function home(request, response) {
+    sendSuccess(response, {
+        message: "Welcome to the Project Management System API."
+    });
 }
 
 function health(request, response) {
-    response.writeHead(200, {
-        "Content-Type": "application/json"
+    sendSuccess(response, {
+        status: "ok",
+        service: "project-management-backend"
     });
-
-    response.end(
-        JSON.stringify({
-            status: "ok",
-            service: "project-management-backend"
-        })
-    );
 }
 
 function getProject(request, response, context) {
-    response.writeHead(200, {
-        "Content-Type": "application/json"
+    sendSuccess(response, {
+        message: "Project route reached.",
+        projectId: context.params.projectId,
+        query: context.query
     });
-
-    response.end(
-        JSON.stringify({
-            message: "Project route reached.",
-            projectId: context.params.projectId,
-            query: context.query
-        })
-    );
 }
 
 const router = createRouter();
