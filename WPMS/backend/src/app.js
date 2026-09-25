@@ -23,6 +23,18 @@ import createProjectController
 import registerProjectRoutes
     from "./routes/projectRoutes.js";
 
+import createMySQLAnalyticsRepository
+    from "./repositories/mysqlAnalyticsRepository.js";
+
+import createAnalyticsService
+    from "./services/analyticsService.js";
+
+import createAnalyticsController
+    from "./controllers/analyticsController.js";
+
+import registerAnalyticsRoutes
+    from "./routes/analyticsRoutes.js";
+
 // Assemble the project module.
 const projectRepository =
     createMySQLProjectRepository(pool);
@@ -35,6 +47,20 @@ const projectController =
 
 // Create and configure the router.
 const router = createRouter();
+
+const analyticsRepository =
+    createMySQLAnalyticsRepository(pool);
+
+const analyticsService =
+    createAnalyticsService(analyticsRepository);
+
+const analyticsController =
+    createAnalyticsController(analyticsService);
+
+registerAnalyticsRoutes(
+    router,
+    analyticsController
+);
 
 router.get("/", (request, response) => {
     sendSuccess(response, {
@@ -56,27 +82,26 @@ async function app(request, response) {
     try {
         await router.handle(request, response);
     } catch (error) {
-        console.error(error);
-
         if (response.headersSent) {
             if (!response.writableEnded) {
                 response.destroy();
             }
             return;
         }
-
+        
         if (error instanceof AppError) {
             sendJson(response, error.statusCode, {
                 error: error.message,
                 ...(error.details !== null
                     ? { details: error.details }
                     : {})
-            });
-            return;
+                });
+                return;
+            }
+            
+            console.error("Unexpected server error:", error);
+            sendServerError(response);
         }
-
-        sendServerError(response);
-    }
 }
 
 export default app;
