@@ -2,9 +2,8 @@ USE work_progress_management_system;
 
 DELIMITER //
 
-
 CREATE PROCEDURE CreateProject(
-    IN p_name_title VARCHAR(200),
+    IN p_name_title VARCHAR(255),
     IN p_description TEXT,
     IN p_start_date DATE,
     IN p_deadline DATE,
@@ -13,6 +12,12 @@ CREATE PROCEDURE CreateProject(
 BEGIN
 
     DECLARE new_project_id BIGINT UNSIGNED;
+
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
 
     START TRANSACTION;
 

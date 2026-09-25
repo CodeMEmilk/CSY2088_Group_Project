@@ -1,6 +1,4 @@
--- =========================================================
--- 1. USER
--- =========================================================
+USE work_progress_management_system;
 
 CREATE TABLE `User` (
     user_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -296,13 +294,13 @@ CREATE TABLE `TASK_DEPENDENCY` (
     CONSTRAINT fk_dependency_blocking_task
         FOREIGN KEY (blocking_task_id)
         REFERENCES `Task` (task_id)
-        ON UPDATE CASCADE
+        ON UPDATE RESTRICT
         ON DELETE CASCADE,
 
     CONSTRAINT fk_dependency_blocked_task
         FOREIGN KEY (blocked_task_id)
         REFERENCES `Task` (task_id)
-        ON UPDATE CASCADE
+        ON UPDATE RESTRICT
         ON DELETE CASCADE,
 
     CONSTRAINT uq_task_dependency

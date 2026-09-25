@@ -1,10 +1,5 @@
 USE work_progress_management_system;
 
-
--- ============================================================
--- ACTIVE TASK OVERVIEW
--- ============================================================
-
 CREATE OR REPLACE VIEW Active_Task_Overview AS
 SELECT
     t.task_id,
@@ -79,7 +74,7 @@ LEFT JOIN
         t.project_id,
         SUM(tl.duration) / 60 AS logged_hours
     FROM Task t
-    JOIN Time_Log tl
+    JOIN TIME_LOG tl
         ON t.task_id = tl.task_id
     GROUP BY t.project_id
 ) l

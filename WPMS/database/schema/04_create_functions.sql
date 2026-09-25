@@ -2,7 +2,6 @@ USE work_progress_management_system;
 
 DELIMITER //
 
-
 -- ============================================================
 -- IS TASK OVERDUE
 -- ============================================================
@@ -12,15 +11,14 @@ CREATE FUNCTION IsTaskOverdue(
     p_status VARCHAR(30)
 )
 RETURNS BOOLEAN
-DETERMINISTIC
+NOT DETERMINISTIC
+NO SQL
 BEGIN
-
     RETURN (
         p_due_date IS NOT NULL
         AND p_due_date < CURRENT_DATE
         AND p_status <> 'done'
     );
-
 END //
 
 
@@ -34,20 +32,15 @@ CREATE FUNCTION GetTaskLoggedHours(
 RETURNS DECIMAL(10,2)
 READS SQL DATA
 BEGIN
-
     DECLARE total_hours DECIMAL(10,2);
 
     SELECT
-        COALESCE(SUM(duration_minutes) / 60, 0)
-
+        COALESCE(SUM(duration) / 60, 0)
     INTO total_hours
-
     FROM Time_Log
-
     WHERE task_id = p_task_id;
 
     RETURN total_hours;
-
 END //
 
 DELIMITER ;
