@@ -1,3 +1,4 @@
+USE work_progress_management_system;
 
 CREATE TABLE `User` (
     user_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -21,6 +22,11 @@ CREATE TABLE `User` (
 
     INDEX idx_user_status (account_status)
 ) ENGINE=InnoDB;
+
+
+-- =========================================================
+-- 2. PROJECT
+-- =========================================================
 
 CREATE TABLE `Project` (
     project_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -57,6 +63,12 @@ CREATE TABLE `Project` (
 
     INDEX idx_project_deadline (deadline)
 ) ENGINE=InnoDB;
+
+
+-- =========================================================
+-- 3. PROJECT MEMBER
+--    Project-scoped role/permission relationship
+-- =========================================================
 
 CREATE TABLE `Project_Member` (
     project_member_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -106,6 +118,10 @@ CREATE TABLE `Project_Member` (
     INDEX idx_project_member_status (status)
 ) ENGINE=InnoDB;
 
+
+-- =========================================================
+-- 4. TASK
+-- =========================================================
 
 CREATE TABLE `Task` (
     task_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -187,6 +203,11 @@ CREATE TABLE `Task` (
     INDEX idx_task_due_date (due_date)
 ) ENGINE=InnoDB;
 
+
+-- =========================================================
+-- 5. COMMENT
+-- =========================================================
+
 CREATE TABLE `Comment` (
     comment_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
@@ -221,6 +242,10 @@ CREATE TABLE `Comment` (
 ) ENGINE=InnoDB;
 
 
+-- =========================================================
+-- 6. TASK CHECKLIST ITEM
+-- =========================================================
+
 CREATE TABLE `Task_CheckList_Item` (
     criterion_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
@@ -253,6 +278,10 @@ CREATE TABLE `Task_CheckList_Item` (
 ) ENGINE=InnoDB;
 
 
+-- =========================================================
+-- 7. TASK DEPENDENCY
+-- =========================================================
+
 CREATE TABLE `TASK_DEPENDENCY` (
     dependency_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
 
@@ -265,13 +294,13 @@ CREATE TABLE `TASK_DEPENDENCY` (
     CONSTRAINT fk_dependency_blocking_task
         FOREIGN KEY (blocking_task_id)
         REFERENCES `Task` (task_id)
-        ON UPDATE CASCADE
+        ON UPDATE RESTRICT
         ON DELETE CASCADE,
 
     CONSTRAINT fk_dependency_blocked_task
         FOREIGN KEY (blocked_task_id)
         REFERENCES `Task` (task_id)
-        ON UPDATE CASCADE
+        ON UPDATE RESTRICT
         ON DELETE CASCADE,
 
     CONSTRAINT uq_task_dependency
@@ -286,6 +315,11 @@ CREATE TABLE `TASK_DEPENDENCY` (
 
     INDEX idx_dependency_blocked (blocked_task_id)
 ) ENGINE=InnoDB;
+
+
+-- =========================================================
+-- 8. ATTACHMENT
+-- =========================================================
 
 CREATE TABLE `Attachment` (
     attachment_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -320,6 +354,11 @@ CREATE TABLE `Attachment` (
 
     INDEX idx_attachment_uploaded_by (uploaded_by)
 ) ENGINE=InnoDB;
+
+
+-- =========================================================
+-- 9. TIME LOG
+-- =========================================================
 
 CREATE TABLE `TIME_LOG` (
     time_log_id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
