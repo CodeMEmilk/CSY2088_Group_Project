@@ -11,6 +11,9 @@ import AppError from "./core/errors/AppError.js";
 
 import pool from "./config/database.js";
 
+// Imports connections to domain1 dependencies
+import { setupDomain1 } from "./domain1.js";
+
 import createMySQLProjectRepository
     from "./repositories/mysqlProjectRepository.js";
 
@@ -32,6 +35,10 @@ import createAnalyticsService
 import createAnalyticsController
     from "./controllers/analyticsController.js";
 
+import {setupDomain2} from "./domain2.js";
+
+
+// The following is for the mockUserRepository.js
 import registerAnalyticsRoutes
     from "./routes/analyticsRoutes.js";
 
@@ -47,6 +54,11 @@ const projectController =
 
 // Create and configure the router.
 const router = createRouter();
+
+// For domain1 dependencies
+const { requireAuth, guards, memberships } = setupDomain1(router, {pool});
+
+setupDomain2(router, {pool, requireAuth, guards, memberships});
 
 const analyticsRepository =
     createMySQLAnalyticsRepository(pool);
@@ -75,7 +87,12 @@ router.get("/api/health", (request, response) => {
     });
 });
 
-registerProjectRoutes(router, projectController);
+registerProjectRoutes(
+    router,
+    projectController,
+    requireAuth,
+    guards
+);
 
 // Central application error boundary.
 async function app(request, response) {

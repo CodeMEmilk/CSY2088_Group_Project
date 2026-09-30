@@ -8,7 +8,7 @@ const PORT = Number(process.env.PORT || 3000);
 const server = http.createServer(app);
 
 async function startServer() {
-    try {
+    try { 
         // Fail at startup if the database is unavailable.
         await pool.query("SELECT 1");
 

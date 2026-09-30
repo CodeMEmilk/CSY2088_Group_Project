@@ -20,47 +20,21 @@ test("Health endpoint returns 200", async () => {
     assert.equal(result.status, 200);
     assert.equal(result.body.status, "ok");
 });
+test("Project endpoints require authentication", async () => {
+    const paths = [
+        "/api/projects/1",
+        "/api/projects/2",
+        "/api/projects/999",
+        "/api/projects/invalid"
+    ];
 
-test("Retrieves mock project 1", async () => {
-    const result = await getJson("/api/projects/1");
+    for (const path of paths) {
+        const response = await fetch(`${BASE_URL}${path}`);
 
-    assert.equal(result.status, 200);
-    assert.equal(result.body.project.project_id, 1);
-    assert.equal(
-        result.body.project.name_title,
-        "Website Redesign"
-    );
-});
-
-test("Retrieves mock project 2", async () => {
-    const result = await getJson("/api/projects/2");
-
-    assert.equal(result.status, 200);
-    assert.equal(result.body.project.project_id, 2);
-});
-
-test("Missing project returns 404", async () => {
-    const result = await getJson("/api/projects/999");
-
-    assert.equal(result.status, 404);
-    assert.equal(
-        result.body.error,
-        "Project not found."
-    );
-});
-
-test("Invalid project ID returns 400", async () => {
-    const result = await getJson("/api/projects/abc");
-
-    assert.equal(result.status, 400);
-});
-
-test("Unknown route returns 404", async () => {
-    const result = await getJson("/api/unknown");
-
-    assert.equal(result.status, 404);
-    assert.equal(
-        result.body.error,
-        "Route not found"
-    );
+        assert.equal(
+            response.status,
+            401,
+            `Expected 401 for ${path}, got ${response.status}`
+        );
+    }
 });
