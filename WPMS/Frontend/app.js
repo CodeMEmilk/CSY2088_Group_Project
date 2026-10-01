@@ -325,6 +325,33 @@ function extractDashboardMetrics(payload) {
   };
 }
 
+async function loadMyTasks(user) {
+  const payload = await apiFetch(routes.MyTasksServlet);
+
+  const tasks = Array.isArray(payload?.tasks)
+    ? payload.tasks
+    : Array.isArray(payload?.data?.tasks)
+      ? payload.data.tasks
+      : Array.isArray(payload?.data)
+        ? payload.data
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
+  const userId = String(user?.user_id ?? user?.id ?? '');
+
+  return userId
+    ? tasks.filter(task => {
+        const assignee =
+          task.assigned_to ??
+          task.assignee_id ??
+          task.user_id;
+
+        return assignee != null && String(assignee) === userId;
+      })
+    : tasks;
+}
+
 async function loadMyDashboard(user) {
   const metricNodes = {
     completed: document.querySelector('[data-metric="completed"]'),
