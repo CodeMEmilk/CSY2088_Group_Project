@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#000080"><title>Tasks · WPMS</title><link rel="stylesheet" href="style.css"></head>
+<body><a class="skip" href="#main">Skip to content</a>
+<header class="topbar"><a class="brand" href="dashboard.html"><span class="brand-mark">W</span><span class="brand-name">WPMS</span></a><nav aria-label="Main navigation"><a href="dashboard.html">Home</a><a href="tasks.html" aria-current="page">Tasks</a><a href="project.html">Project</a><a href="insights.html">Insights</a><a href="team.html">Team</a></nav><div class="nav-right"><span class="nav-user" data-user-name></span><button class="btn ghost small" type="button" data-action="logout">Sign out</button></div></header>
+<main class="wrap compact-wrap" id="main">
+  <div class="page-title compact-title"><div><p class="eyebrow">Task lifecycle & context</p><h1>Tasks</h1><p>Manage task requirements, discussion, files, dependencies and work effort from one place.</p></div><a class="btn ghost" href="project.html#board">Project board</a></div>
+
+  <section class="card card-pad compact-card" id="task-form"><div class="card-head"><div><h2>Create task</h2><p>Create a task using the current authenticated session.</p></div></div>
+    <form action="TaskServlet" method="post" class="create-form"><div class="form-grid">
+      <label class="field">Title<input name="title" required placeholder="Task title"></label>
+      <label class="field">Project<input name="project_id" required inputmode="numeric" placeholder="Project ID"></label>
+      <label class="field">Assignee<input name="assigned_to" inputmode="numeric" placeholder="User ID (optional)"></label>
+      <label class="field">Status<select name="status"><option value="todo">To do</option><option value="in_progress">In progress</option><option value="waiting_approval">Waiting approval</option><option value="done">Done</option></select></label>
+      <label class="field">Priority<select name="priority"><option value="medium">Medium</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>
+      <label class="field">Estimated hours<input type="number" name="estimated_hours" min="0" step="0.25" placeholder="Optional"></label>
+      <label class="field">Start date<input type="date" name="start_date"></label><label class="field">Due date<input type="date" name="due_date"></label>
+      <label class="field form-wide">Description<textarea name="description" rows="2" placeholder="Optional task details"></textarea></label>
+    </div><div class="form-actions"><button class="btn" type="submit">Create task</button><span class="form-note">The backend remains responsible for permission checks.</span></div></form>
+  </section>
+
+  <section class="card card-pad compact-card"><div class="card-head"><div><h2>Task records</h2><p>Select a task to load its complete context.</p></div><form id="task-filter" class="filter-form"><select class="select" name="status" aria-label="Filter by status"><option value="">All statuses</option><option value="todo">To do</option><option value="in_progress">In progress</option><option value="waiting_approval">Waiting approval</option><option value="done">Done</option></select><button class="btn ghost small" type="submit">Refresh</button></form></div>
+    <div class="task-workspace"><div class="sample-task-list" data-task-list><div class="empty-panel compact-empty">Loading tasks…</div></div>
+      <article class="selected-task task-context" id="details" data-task-details><div class="empty-panel"><strong>Select a task</strong><span>Its checklist, discussion, files, dependencies and effort will appear here.</span></div></article>
+    </div>
+  </section>
+  <div class="related"><strong>RELATED</strong><a href="project.html#board">Board →</a><a href="project.html#timeline">Timeline →</a><a href="insights.html#time-entry">Log time →</a></div>
+  <footer class="dashboard-foot"><span>Live database records.</span></footer>
+</main><script src="app.js"></script></body></html>
