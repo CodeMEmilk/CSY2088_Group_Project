@@ -1,5 +1,14 @@
-
 import createRouter from "./core/router/router.js";
+
+import {
+    readFile
+} from "node:fs/promises";
+
+import path from "node:path";
+
+import {
+    fileURLToPath
+} from "node:url";
 
 import {
     sendSuccess,
@@ -52,6 +61,14 @@ const projectService =
 const projectController =
     createProjectController(projectService);
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const frontendRoot = path.resolve(
+    __dirname,
+    "../../frontend"
+);
+
 // Create and configure the router.
 const router = createRouter();
 
@@ -95,8 +112,94 @@ registerProjectRoutes(
 );
 
 // Central application error boundary.
+async function serveFrontend(request, response) {
+    if (request.method !== "GET") {
+        return false;
+    }
+
+    const url = new URL(
+        request.url,
+        `http://${request.headers.host || "localhost"}`
+    );
+
+    let pathname = decodeURIComponent(url.pathname);
+
+    if (pathname === "/") {
+        pathname = "/index.html";
+    }
+
+    // Never allow API requests to fall through to frontend files.
+    if (pathname.startsWith("/api/")) {
+        return false;
+    }
+
+    // Only serve normal frontend files.
+    const relativePath = pathname.replace(/^\/+/, "");
+
+    if (
+        !relativePath ||
+        relativePath.includes("..") ||
+        relativePath.includes("\\")
+    ) {
+        return false;
+    }
+
+    const filePath = path.resolve(
+        frontendRoot,
+        relativePath
+    );
+
+    if (
+        filePath !== frontendRoot &&
+        !filePath.startsWith(`${frontendRoot}${path.sep}`)
+    ) {
+        return false;
+    }
+
+    try {
+        const content = await readFile(filePath);
+
+        const extension = path.extname(filePath).toLowerCase();
+
+        const contentTypes = {
+            ".html": "text/html; charset=utf-8",
+            ".js": "application/javascript; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".svg": "image/svg+xml",
+            ".ico": "image/x-icon"
+        };
+
+        response.writeHead(200, {
+            "Content-Type":
+                contentTypes[extension] ||
+                "application/octet-stream"
+        });
+
+        response.end(content);
+        return true;
+    } catch (error) {
+        if (error.code === "ENOENT") {
+            return false;
+        }
+
+        throw error;
+    }
+}
+
+
 async function app(request, response) {
     try {
+        if (
+            request.method === "GET" &&
+            await serveFrontend(request, response)
+        ) {
+            return;
+        }
+
         await router.handle(request, response);
     } catch (error) {
         if (response.headersSent) {
