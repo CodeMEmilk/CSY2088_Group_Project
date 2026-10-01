@@ -1,8 +1,14 @@
-
-function registerProjectRoutes(router, projectController) {
+function registerProjectRoutes(
+    router,
+    projectController,
+    requireAuth,
+    guards
+) {
     router.get(
         "/api/projects/:projectId",
-        projectController.getProject
+        requireAuth(
+            guards.roadmap(projectController.getProject)
+        )
     );
 }
 

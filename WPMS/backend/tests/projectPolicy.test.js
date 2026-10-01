@@ -1,0 +1,12 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import {canViewRoadmap,canManageMembers,canViewTask} from "../src/policies/projectPolicy.js";
+const lead={project_id:"1",role:"LEAD",status:"active"};
+const engineer={project_id:"1",role:"ENGINEER",status:"active"};
+const contractor={project_id:"1",role:"CONTRACTOR",status:"active"};
+const task={project_id:"1",assigned_to:"9"};
+test("lead and engineer can see roadmap",()=>{assert.equal(canViewRoadmap(lead),true);assert.equal(canViewRoadmap(engineer),true);});
+test("contractor cannot see roadmap or manage members",()=>{assert.equal(canViewRoadmap(contractor),false);assert.equal(canManageMembers(contractor),false);});
+test("only lead can manage members",()=>{assert.equal(canManageMembers(lead),true);assert.equal(canManageMembers(engineer),false);});
+test("contractor sees assigned task only",()=>{assert.equal(canViewTask(contractor,task,"9"),true);assert.equal(canViewTask(contractor,task,"10"),false);});
+test("inactive membership and wrong project denied",()=>{assert.equal(canViewTask({...lead,status:"removed"},task,"9"),false);assert.equal(canViewTask({...lead,project_id:"2"},task,"9"),false);});
