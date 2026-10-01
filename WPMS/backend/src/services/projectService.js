@@ -1,4 +1,3 @@
-
 import AppError from "../core/errors/AppError.js";
 
 function createProjectService(projectRepository) {
@@ -14,8 +13,20 @@ function createProjectService(projectRepository) {
         return project;
     }
 
+    async function getProjectsForUser(userId) {
+        if (!userId) {
+            throw new AppError(
+                "Authentication required.",
+                401
+            );
+        }
+
+        return projectRepository.findActiveByUser(userId);
+    }
+
     return {
-        getProjectById
+        getProjectById,
+        getProjectsForUser
     };
 }
 

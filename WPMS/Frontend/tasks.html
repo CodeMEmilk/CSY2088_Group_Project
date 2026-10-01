@@ -9,7 +9,9 @@
   <section class="card card-pad compact-card" id="task-form"><div class="card-head"><div><h2>Create task</h2><p>Create a task using the current authenticated session.</p></div></div>
     <form action="TaskServlet" method="post" class="create-form"><div class="form-grid">
       <label class="field">Title<input name="title" required placeholder="Task title"></label>
-      <label class="field">Project<input name="project_id" required inputmode="numeric" placeholder="Project ID"></label>
+      <label class="field">Project<select name="project_id" id="task-project" required>
+        <option value="">Loading projects...</option>
+      </select></label>
       <label class="field">Assignee<input name="assigned_to" inputmode="numeric" placeholder="User ID (optional)"></label>
       <label class="field">Status<select name="status"><option value="todo">To do</option><option value="in_progress">In progress</option><option value="waiting_approval">Waiting approval</option><option value="done">Done</option></select></label>
       <label class="field">Priority<select name="priority"><option value="medium">Medium</option><option value="low">Low</option><option value="high">High</option><option value="urgent">Urgent</option></select></label>

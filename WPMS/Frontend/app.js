@@ -205,9 +205,64 @@ function installLogoutControls() {
   });
 }
 
-async function loadMyTasks(user) {
-  const list = document.querySelector('[data-my-tasks]');
-  if (!list) return [];
+async function loadMyProjects() {
+  const select = document.querySelector('#task-project');
+
+  if (!select) return;
+
+  try {
+    const payload = await apiFetch('/api/my-projects');
+
+    const projects = Array.isArray(payload?.projects)
+      ? payload.projects
+      : Array.isArray(payload?.data?.projects)
+        ? payload.data.projects
+        : [];
+
+    select.innerHTML = '';
+
+    if (!projects.length) {
+      select.innerHTML = '<option value="">No active projects available</option>';
+      select.disabled = true;
+      return;
+    }
+
+    select.appendChild(
+      new Option('Select a project...', '', true, true)
+    );
+
+    for (const project of projects) {
+      const projectId = project.project_id;
+
+      const label = project.name_title
+        ? `${project.name_title} (Project ${projectId})`
+        : `Project ${projectId}`;
+
+      const option = new Option(
+        label,
+        String(projectId)
+      );
+
+      select.appendChild(option);
+    }
+  } catch (error) {
+    select.innerHTML = '<option value="">Unable to load projects</option>';
+    select.disabled = true;
+
+    showPageMessage(
+      `Unable to load your projects: ${error.message}`,
+      'error'
+    );
+  }
+}
+
+async function loadTaskPage(user) {
+  renderUserChrome(user);
+
+  await loadMyProjects();
+
+  const list = document.querySelector('[data-task-list]');
+  if (!list) return;
 
   try {
     const payload = await apiFetch(routes.MyTasksServlet);

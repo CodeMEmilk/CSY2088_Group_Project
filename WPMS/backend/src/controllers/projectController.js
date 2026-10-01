@@ -1,8 +1,8 @@
-
 import AppError from "../core/errors/AppError.js";
-import { sendSuccess } from "../core/http/response.js";
+import {sendSuccess} from "../core/http/response.js";
 
 function createProjectController(projectService) {
+
     async function getProject(request, response, context) {
         const rawId = context.params.projectId;
 
@@ -31,8 +31,19 @@ function createProjectController(projectService) {
         });
     }
 
+    async function getMyProjects(request, response, context) {
+        const projects = await projectService.getProjectsForUser(
+            context.userId
+        );
+
+        sendSuccess(response, {
+            projects
+        });
+    }
+
     return {
-        getProject
+        getProject,
+        getMyProjects
     };
 }
 
