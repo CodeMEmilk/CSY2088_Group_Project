@@ -22,32 +22,19 @@ import createMyTasksController from "./controllers/myTasksController.js";
 import registerMyTasksRoutes from "./routes/myTasksRoutes.js";
 import {createProjectTimelineRepository} from "./repositories/mysqlProjectTimelineRepository.js";
 import createProjectTimelineService from "./services/projectTimelineService.js";
-import createTimelinePropagationService from "./services/timelinePropagationService.js";
 import createProjectTimelineController from "./controllers/projectTimelineController.js";
 import registerProjectTimelineRoutes from "./routes/projectTimelineRoutes.js";
 import createAttachmentService from "./services/attachmentService.js";
 import createAttachmentController from "./controllers/attachmentController.js";
 import registerAttachmentRoutes from "./routes/attachmentRoutes.js";
-import {createWorkloadRepository} from "./repositories/mysqlWorkloadRepository.js";
-import createEffortService from "./services/effortService.js";
-import createEffortController from "./controllers/effortController.js";
-import registerEffortRoutes from "./routes/effortRoutes.js";
-import createWorkloadService from "./services/workloadService.js";
-import createWorkloadController from "./controllers/workloadController.js";
-import registerWorkloadRoutes from "./routes/workloadRoutes.js";
-import createTaskSlaService from "./services/taskSlaService.js";
-import createTaskSlaController from "./controllers/taskSlaController.js";
-import registerTaskSlaRoutes from "./routes/taskSlaRoutes.js";
 
 export function setupDomain2(router, {pool, requireAuth, guards, memberships}) {
     const taskRepository = createTaskRepository(pool);
     const notificationRepository = createNotificationRepository(pool);
-    const timelinePropagationService = createTimelinePropagationService(taskRepository);
     const taskService = createTaskService(
         taskRepository,
         memberships,
-        notificationRepository,
-        timelinePropagationService
+        notificationRepository
     );
     const taskController = createTaskController(taskService);
     const taskContextService = createTaskContextService(taskRepository);
@@ -67,13 +54,6 @@ export function setupDomain2(router, {pool, requireAuth, guards, memberships}) {
     const projectTimelineController = createProjectTimelineController(projectTimelineService);
     const attachmentService = createAttachmentService(taskRepository);
     const attachmentController = createAttachmentController(attachmentService);
-    const effortService = createEffortService(taskRepository, timeLogRepository);
-    const effortController = createEffortController(effortService);
-    const workloadRepository = createWorkloadRepository(pool);
-    const workloadService = createWorkloadService(workloadRepository);
-    const workloadController = createWorkloadController(workloadService);
-    const taskSlaService = createTaskSlaService(taskRepository);
-    const taskSlaController = createTaskSlaController(taskSlaService);
 
     registerTaskRoutes(
         router,
@@ -129,30 +109,9 @@ export function setupDomain2(router, {pool, requireAuth, guards, memberships}) {
         guards
     );
 
-    registerEffortRoutes(
-        router,
-        effortController,
-        requireAuth,
-        guards
-    );
-
-    registerWorkloadRoutes(
-        router,
-        workloadController,
-        requireAuth
-    );
-
-    registerTaskSlaRoutes(
-        router,
-        taskSlaController,
-        requireAuth,
-        guards
-    );
-
     return {
         taskRepository,
         taskService,
-        timelinePropagationService,
         taskController,
         taskContextService,
         taskContextController,
@@ -171,13 +130,6 @@ export function setupDomain2(router, {pool, requireAuth, guards, memberships}) {
         projectTimelineService,
         projectTimelineController,
         attachmentService,
-        attachmentController,
-        effortService,
-        effortController,
-        workloadRepository,
-        workloadService,
-        workloadController,
-        taskSlaService,
-        taskSlaController
+        attachmentController
     };
 }

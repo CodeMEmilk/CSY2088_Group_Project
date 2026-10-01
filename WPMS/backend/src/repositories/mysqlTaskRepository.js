@@ -507,65 +507,6 @@ export function createTaskRepository(pool) {
         return rows;
     }
 
-    async function listTaskDependents(taskId) {
-        const [rows] = await pool.execute(
-            `
-            SELECT
-                d.dependency_id,
-                d.blocking_task_id,
-                d.blocked_task_id,
-                t.start_date,
-                t.due_date,
-                t.status,
-                t.project_id
-            FROM TASK_DEPENDENCY d
-            INNER JOIN Task t ON t.task_id = d.blocked_task_id
-            WHERE d.blocking_task_id = ?
-            ORDER BY d.dependency_id ASC
-            `,
-            [taskId]
-        );
-
-        return rows;
-    }
-
-    async function listTaskBlockers(taskId) {
-        const [rows] = await pool.execute(
-            `
-            SELECT
-                d.dependency_id,
-                d.blocking_task_id,
-                d.blocked_task_id,
-                t.due_date,
-                t.status
-            FROM TASK_DEPENDENCY d
-            INNER JOIN Task t ON t.task_id = d.blocking_task_id
-            WHERE d.blocked_task_id = ?
-            ORDER BY d.dependency_id ASC
-            `,
-            [taskId]
-        );
-
-        return rows;
-    }
-
-    async function updateSchedule(taskId, startDate, dueDate) {
-        const [result] = await pool.execute(
-            `
-            UPDATE Task
-            SET start_date = ?, due_date = ?
-            WHERE task_id = ?
-            `,
-            [startDate, dueDate, taskId]
-        );
-
-        if (result.affectedRows === 0) {
-            return null;
-        }
-
-        return findById(taskId);
-    }
-
     async function removeDependency(dependencyId) {
         const [result] = await pool.execute(
             `DELETE FROM TASK_DEPENDENCY WHERE dependency_id = ?`,
@@ -606,11 +547,7 @@ export function createTaskRepository(pool) {
                 u.name AS user_name,
                 tl.started_at,
                 tl.ended_at,
-                CASE
-                    WHEN tl.duration IS NOT NULL THEN tl.duration
-                    WHEN tl.ended_at IS NULL THEN ROUND(TIMESTAMPDIFF(SECOND, tl.started_at, NOW()) / 60, 2)
-                    ELSE 0
-                END AS duration,
+                tl.duration,
                 tl.created_at
             FROM TIME_LOG tl
             INNER JOIN User u ON u.user_id = tl.user_id
@@ -672,9 +609,6 @@ export function createTaskRepository(pool) {
         listProjectDependencies,
         removeDependency,
         listBlockedTasks,
-        listTaskDependents,
-        listTaskBlockers,
-        updateSchedule,
         listTimeLogs,
         getContext
     };

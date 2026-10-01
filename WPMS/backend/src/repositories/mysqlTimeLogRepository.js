@@ -9,11 +9,7 @@ export function createTimeLogRepository(pool) {
                 u.name AS user_name,
                 tl.started_at,
                 tl.ended_at,
-                CASE
-                    WHEN tl.duration IS NOT NULL THEN tl.duration
-                    WHEN tl.ended_at IS NULL THEN ROUND(TIMESTAMPDIFF(SECOND, tl.started_at, NOW()) / 60, 2)
-                    ELSE 0
-                END AS duration,
+                tl.duration,
                 tl.created_at
             FROM TIME_LOG tl
             INNER JOIN User u ON u.user_id = tl.user_id
@@ -34,11 +30,7 @@ export function createTimeLogRepository(pool) {
                 tl.user_id,
                 tl.started_at,
                 tl.ended_at,
-                CASE
-                    WHEN tl.duration IS NOT NULL THEN tl.duration
-                    WHEN tl.ended_at IS NULL THEN ROUND(TIMESTAMPDIFF(SECOND, tl.started_at, NOW()) / 60, 2)
-                    ELSE 0
-                END AS duration,
+                tl.duration,
                 tl.created_at
             FROM TIME_LOG tl
             WHERE tl.user_id = ?
@@ -61,11 +53,7 @@ export function createTimeLogRepository(pool) {
                 u.name AS user_name,
                 tl.started_at,
                 tl.ended_at,
-                CASE
-                    WHEN tl.duration IS NOT NULL THEN tl.duration
-                    WHEN tl.ended_at IS NULL THEN ROUND(TIMESTAMPDIFF(SECOND, tl.started_at, NOW()) / 60, 2)
-                    ELSE 0
-                END AS duration,
+                tl.duration,
                 tl.created_at
             FROM TIME_LOG tl
             INNER JOIN User u ON u.user_id = tl.user_id

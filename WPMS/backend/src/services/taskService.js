@@ -189,7 +189,7 @@ function normalizeUpdateInput(input, currentTask) {
     };
 }
 
-function createTaskService(taskRepository, memberships = null, notificationRepository = null, timelinePropagationService = null) {
+function createTaskService(taskRepository, memberships = null, notificationRepository = null) {
     async function getTaskById(taskId) {
         validatePositiveInteger(taskId, "Task ID");
 
@@ -240,17 +240,7 @@ function createTaskService(taskRepository, memberships = null, notificationRepos
         const normalized = normalizeUpdateInput(input, currentTask);
         await assertAssignee(currentTask.project_id, normalized.assignedTo);
 
-        const updatedTask = await taskRepository.update(taskId, normalized);
-
-        const oldDueDate = currentTask?.due_date == null ? null : String(currentTask.due_date).slice(0, 10);
-        const newDueDate = updatedTask?.due_date == null ? null : String(updatedTask.due_date).slice(0, 10);
-
-        if (timelinePropagationService && updatedTask && oldDueDate !== newDueDate) {
-            await timelinePropagationService.propagateFromTask(taskId);
-            return taskRepository.findById(taskId);
-        }
-
-        return updatedTask;
+        return taskRepository.update(taskId, normalized);
     }
 
     async function assignTask(taskId, assignedTo) {
